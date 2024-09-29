@@ -1,29 +1,61 @@
-const canvas = document.getElementById('drawingCanvas');
-const ctx = canvas.getContext('2d');
-let drawing = false;
+window.onload = function() {
+    var canvas = document.getElementById('imageCanvas');
+    var ctx = canvas.getContext('2d');
+    var img = new Image();
+    var mousePressed = false;
+    var lastX, lastY;
 
-canvas.addEventListener('mousedown', startDrawing);
-canvas.addEventListener('mouseup', stopDrawing);
-canvas.addEventListener('mousemove', draw);
+    document.getElementById('imageLoader').addEventListener('change', function(e) {
+        var reader = new FileReader();
+        reader.onload = function(event) {
+            img.onload = function() {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    });
 
-function startDrawing(e) {
-    drawing = true;
-    draw(e);
-}
+    canvas.addEventListener('mousedown', function(e) {
+        mousePressed = true;
+        draw(e.offsetX, e.offsetY, false);
+    });
 
-function stopDrawing() {
-    drawing = false;
-    ctx.beginPath();
-}
+    canvas.addEventListener('mousemove', function(e) {
+        if (mousePressed) {
+            draw(e.offsetX, e.offsetY, true);
+        }
+    });
 
-function draw(e) {
-    if (!drawing) return;
-    ctx.lineWidth = 5;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = 'black';
+    canvas.addEventListener('mouseup', function() {
+        mousePressed = false;
+    });
 
-    ctx.lineTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+    canvas.addEventListener('mouseleave', function() {
+        mousePressed = false;
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', function() {
+        var dataURL = canvas.toDataURL('image/png').replace("image/png", "image/octet-stream");
+        var link = document.createElement('a');
+        link.download = 'edited-image.png';
+        link.href = dataURL;
+        link.click();
+    });
+
+    function draw(x, y, isDown) {
+        if (isDown) {
+            ctx.beginPath();
+            ctx.strokeStyle = 'red'; // Change drawing color here
+            ctx.lineWidth = 3; // Change drawing line width here
+            ctx.lineJoin = 'round';
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.closePath();
+            ctx.stroke();
+        }
+        lastX = x; lastY = y;
+    }
 }
